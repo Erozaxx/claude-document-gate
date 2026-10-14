@@ -498,9 +498,9 @@ It can miss values in unusual formats and can mask harmless numbers that look li
 
 The hook recognizes messages from Claude Code by how they start. This follows the current Claude Code format and can stop working after an update. A prompt that starts the same way, for example with `[DOCUMENT_GATE:`, passes without a check. The hook guards against accidental leaks, it cannot stop its own user from going around it.
 
-### Windows named pipe has less testing
+### Tested versions
 
-Delivery on Linux and WSL goes through a Unix socket. On Windows it goes through a named pipe, which has been tested less.
+Delivery on Linux and WSL goes through a Unix socket, on Windows through a named pipe. Both were tested in October 2026: WSL with the Claude Code command-line tool, Windows with the Claude desktop app (Claude Code 2.1.295). In both cases the rewritten prompt arrived in the session without manual approval. Other versions can behave differently.
 
 ## For advanced users
 

@@ -500,9 +500,9 @@ Hodnoty v neobvyklém formátu může přehlédnout a naopak může zamaskovat n
 
 Zprávy od Claude Code hook pozná podle toho, jak začínají. Odpovídá to současnému formátu Claude Code a po aktualizaci to může přestat fungovat. Prompt, který začne stejně, třeba `[DOCUMENT_GATE:`, projde bez kontroly. Hook chrání před nechtěným únikem, vlastnímu uživateli v obejití nezabrání.
 
-### Named pipe na Windows je méně otestovaná
+### Otestované verze
 
-Na Linuxu a ve WSL jde doručení přes Unix socket. Na Windows přes named pipe, která je zatím otestovaná méně.
+Na Linuxu a ve WSL jde doručení přes Unix socket, na Windows přes named pipe. Obojí jsme vyzkoušeli v říjnu 2026: WSL s Claude Code v příkazové řádce a Windows s desktopovou aplikací Claude (Claude Code 2.1.295). V obou případech přepsaný prompt dorazil do session bez ručního schvalování. Jiné verze se můžou chovat jinak.
 
 ## Pro pokročilé
 
