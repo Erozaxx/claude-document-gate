@@ -466,6 +466,14 @@ Pokud instalátor hlásí neúplné virtuální prostředí, smažte ve složce 
 
 Restartujte Claude Code. Napište `/hooks` a ověřte, že je hook v seznamu. Zkontrolujte, že přípona souboru je v `convert_extensions` a že cesta je správně. Když soubor na dané cestě neexistuje, hook prompt pustí beze změny.
 
+### Model na Windows čte PDF napřímo
+
+Claude Code na Windows spouští hooky přes Git Bash. Ten z cest zahodí zpětná lomítka, takže příkaz jako `D:\Tools\...\python.exe` se nespustí. Claude Code pak ohlásí neblokující chybu hooku a prompt i s dokumentem pošle modelu.
+
+Spusťte instalátor znovu. Zapíše příkaz s dopřednými lomítky a v dvojitých uvozovkách, například `"D:/Tools/claude-document-gate/.venv/Scripts/python.exe" "D:/Tools/claude-document-gate/hook.py"`, a starý záznam nahradí. Po registraci ten příkaz spustí stejně jako Claude Code (na Windows přes Git Bash, na Linuxu přes `/bin/sh`). Když se hook nespustí, instalátor vypíše výrazné varování a skončí s kódem 1.
+
+Cesta k projektu nesmí obsahovat dvojité uvozovky, `$`, zpětný apostrof ani zpětné lomítko po převodu. Instalace pak skončí chybou.
+
 ## Omezení a bezpečnost
 
 ### Neoficiální protokol pro doručení
@@ -474,7 +482,7 @@ Přepsaný prompt se do session posílá přes inbox socket Claude Code. Tenhle 
 
 ### Není to pevná bezpečnostní hranice
 
-Když hook nedoběhne v časovém limitu (180 sekund), Claude Code může původní prompt pustit dál.
+Když hook nedoběhne v časovém limitu (180 sekund), Claude Code může původní prompt pustit dál. Totéž se stane, když se hook vůbec nespustí, třeba kvůli špatné cestě v `settings.json`. Claude Code to bere jako neblokující chybu.
 
 ### Model může originál otevřít jinak
 

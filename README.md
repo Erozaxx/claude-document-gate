@@ -464,6 +464,14 @@ If the installer reports that the virtual environment is incomplete, delete the 
 
 Restart Claude Code. Type `/hooks` and check that the hook is listed. Check that the file extension is in `convert_extensions` and that the path is correct. If the file does not exist at that path, the hook lets the prompt through unchanged.
 
+### The model reads the PDF directly on Windows
+
+Claude Code on Windows runs hooks through Git Bash. Git Bash drops backslashes from paths, so a command such as `D:\Tools\...\python.exe` cannot start. Claude Code then reports a non-blocking hook error and sends the prompt with the document to the model.
+
+Run the installer again. It writes the command with forward slashes and double quotes, for example `"D:/Tools/claude-document-gate/.venv/Scripts/python.exe" "D:/Tools/claude-document-gate/hook.py"`, and replaces the old entry. After registration it runs that exact command the same way Claude Code does (Git Bash on Windows, `/bin/sh` on Linux). If the hook cannot start, the installer prints a clear warning and exits with code 1.
+
+The project path must not contain double quotes, `$`, a backtick or a backslash after conversion. The installer stops with an error in that case.
+
 ## Limitations and security
 
 ### Unofficial delivery protocol
@@ -472,7 +480,7 @@ The rewritten prompt is sent into the session through the Claude Code inbox sock
 
 ### Not a hard security boundary
 
-If the hook does not finish within the time limit (180 seconds), Claude Code can let the original prompt through.
+If the hook does not finish within the time limit (180 seconds), Claude Code can let the original prompt through. The same happens when the hook cannot start at all, for example because of a wrong path in `settings.json`. Claude Code treats that as a non-blocking error.
 
 ### The model can still open the original
 

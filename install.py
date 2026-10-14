@@ -98,9 +98,29 @@ def install_dependencies(py: Path, *, upgrade: bool) -> None:
     verify_markitdown(py)
 
 
-def command_for_hook(py: Path, script: Path) -> str:
-    args = [str(py), str(script)]
-    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
+_BASH_UNSAFE = set('"$`\\')
+
+
+def command_for_hook(py: Path, script: Path, *, windows: bool | None = None) -> str:
+    """Command string exactly as Claude Code will hand it to a shell.
+
+    On Windows Claude Code runs hooks through Git Bash, which eats backslashes
+    (D:\\a\\b becomes D:ab). So paths use forward slashes inside double quotes.
+    """
+    if windows is None:
+        windows = os.name == "nt"
+    if not windows:
+        return shlex.join([str(py), str(script)])
+    parts = []
+    for path in (py, script):
+        text = str(path).replace("\\", "/")
+        bad = sorted(set(text) & _BASH_UNSAFE)
+        if bad:
+            raise InstallationError(
+                f"Path contains characters unsafe in a bash command ({' '.join(bad)}): {text}. "
+                "Move the project to a path without double quotes, $, backticks or backslashes.")
+        parts.append(f'"{text}"')
+    return " ".join(parts)
 
 
 def is_our_hook(hook: object, script: Path) -> bool:
@@ -113,6 +133,54 @@ def is_our_hook(hook: object, script: Path) -> bool:
     normalized = command.replace("\\", "/").lower()
     path = str(script).replace("\\", "/").lower()
     return path in normalized or ("claude-document-gate" in normalized and "/hook.py" in normalized)
+
+
+def find_windows_bash() -> str | None:
+    """Git for Windows bash; never the WSL launcher in System32."""
+    candidates = []
+    for var in ("ProgramFiles", "ProgramFiles(x86)"):
+        base = os.environ.get(var)
+        if base:
+            candidates.append(Path(base) / "Git" / "bin" / "bash.exe")
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    found = shutil.which("bash")
+    if found and "system32" not in found.replace("\\", "/").lower():
+        return found
+    return None
+
+
+def self_check_hook(command: str, *, windows: bool | None = None) -> tuple[bool | None, str]:
+    """Run the registered command the way Claude Code does.
+
+    Returns (True, "") on success, (False, detail) on failure and
+    (None, reason) when no suitable shell exists (non-fatal).
+    """
+    if windows is None:
+        windows = os.name == "nt"
+    if windows:
+        bash = find_windows_bash()
+        if not bash:
+            return None, "Git Bash not found; hook command could not be verified"
+        shell = [bash, "-c", command]
+    else:
+        shell = ["/bin/sh", "-c", command]
+    stdin = json.dumps({"prompt": "document gate self-check", "cwd": str(PROJECT_DIR)})
+    try:
+        run = subprocess.run(shell, input=stdin, capture_output=True, text=True,
+                             encoding="utf-8", errors="replace", timeout=60, check=False)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, f"cannot start shell: {exc}"
+    if run.returncode != 0:
+        return False, f"exit code {run.returncode}\nstderr: {run.stderr.strip()[:800]}"
+    try:
+        ok = json.loads(run.stdout) == {}
+    except ValueError:
+        ok = False
+    if not ok:
+        return False, f"unexpected stdout: {run.stdout.strip()[:300]!r}\nstderr: {run.stderr.strip()[:800]}"
+    return True, ""
 
 
 def write_json_atomic(settings: Path, config: dict) -> None:
@@ -286,8 +354,17 @@ def main(argv: list[str] | None = None) -> int:
                         description="Running local smoke tests before registering hook")
         ensure_user_config()
         register_hook(py)
+        status, detail = self_check_hook(command_for_hook(py, PROJECT_DIR / "hook.py"))
     except (InstallationError, OSError) as exc:
         print(f"\nERROR: {exc}", file=sys.stderr)
+        return 1
+    if status is None:
+        print(f"\nWARNING: {detail}.", file=sys.stderr)
+    elif not status:
+        print("\n" + "!" * 70 + "\nWARNING: THE REGISTERED HOOK CANNOT BE RUN.\n"
+              "Claude Code would treat this as a non-blocking error and send documents to the\n"
+              "model WITHOUT conversion (fail-open). Do not rely on the gate until this is fixed.\n"
+              + "!" * 70 + f"\n{detail}", file=sys.stderr)
         return 1
     print("\n✓ Installed. Restart Claude Code. Keep this project folder at the same path.")
     print("Note: message delivery into Claude Code session still depends on an unofficial protocol.")
