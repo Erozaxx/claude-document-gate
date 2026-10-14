@@ -1,0 +1,19 @@
+{
+  "comment": "EXPERIMENTAL: Claude Code peer-message wire format is reverse-engineered. Change ONLY this file when schema changes.",
+  "auth_frame": {
+    "type": "auth",
+    "token": "${token}"
+  },
+  "message_frame": {
+    "msgV": 1,
+    "msg_id": "${msg_id}",
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": "${content}"
+    },
+    "priority": "next",
+    "session_id": "${session_id}"
+  },
+  "body_template": "[DOCUMENT_GATE: ${mode}]\nOriginal user request (all detected document references have been replaced by validated ${adj} references):\n${prompt}\n\nValidated local ${adj} files:\n${files}\n\nThe original attachment was blocked BEFORE this turn. Only use the ${adj} files above; do not open or request the original files. Handle the user's request using the ${adj} files. If an operation requires the original, stop and ask the user for an explicitly approved workflow."
+}

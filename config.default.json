@@ -1,0 +1,5 @@
+{
+  "convert_extensions": [".pdf", ".docx", ".pptx", ".xlsx", ".epub"],
+  "block_extensions": [".doc", ".xls", ".ppt", ".zip", ".7z", ".png", ".jpg", ".jpeg", ".exe", ".bin"],
+  "sanitize": true
+}
