@@ -212,10 +212,30 @@ class GateTests(unittest.TestCase):
             with self.subTest(prompt=prompt):
                 self.assertEqual(gate.process_prompt(prompt, self.cwd), (False, prompt, [], None))
 
-    def test_missing_file_with_paste_marker_still_blocked_by_marker_only(self):
-        found, _, _, error = gate.process_prompt("vytvor a.md <pasted_content>x", self.cwd)
+    def test_pasted_text_without_file_reference_passes(self):
+        for prompt in ('<pasted_content id="1">\nline one\nline two\n</pasted_content>',
+                       "vytvor a.md <pasted_content>x</pasted_content>"):
+            with self.subTest(prompt=prompt):
+                self.assertEqual(gate.process_prompt(prompt, self.cwd), (False, prompt, [], None))
+
+    def test_image_and_attachment_markers_without_file_still_blocked(self):
+        for prompt in ("popis [Image: screenshot.png]", "viz [Attachment: report.pdf]"):
+            with self.subTest(prompt=prompt):
+                found, _, _, error = gate.process_prompt(prompt, self.cwd)
+                self.assertTrue(found)
+                self.assertIn("Inline attachment", error)
+
+    def test_existing_document_with_pasted_content_still_blocked(self):
+        (self.cwd / "real.md").write_text("hello", encoding="utf-8")
+        found, _, _, error = gate.process_prompt(
+            "shrn real.md <pasted_content>x</pasted_content>", self.cwd)
         self.assertTrue(found)
-        self.assertIn("Inline attachment", error)
+        self.assertIn("Large/expanded prompt with attachment", error)
+
+    def test_hook_allows_pasted_text(self):
+        prompt = '<pasted_content id="1">\nabc\n</pasted_content>'
+        self.assertEqual(hook.handle({"prompt": prompt, "cwd": str(self.cwd)},
+                                     notify_session=False), {})
 
     def test_mixed_existing_and_missing(self):
         (self.cwd / "real.md").write_text("hello", encoding="utf-8")
