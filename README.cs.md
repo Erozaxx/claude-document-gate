@@ -266,7 +266,7 @@ V těchto případech se prompt zablokuje, k modelu nejde nic a Claude Code uká
 | Soubor má víc než 25 MiB | Dokument rozdělte nebo vyexportujte jen potřebnou část. |
 | Převod nevrátil žádný text | Typicky skenované PDF bez textové vrstvy. Nejdřív na něj pusťte OCR v jiném nástroji. |
 | Prompt odkazuje na existující dokument a má víc než 14 000 znaků nebo obsahuje vložený obsah | Pošlete kratší prompt a na soubor odkažte cestou. |
-| Claude Code poslal soubor jako přílohu (obrázek, přetažení myší) | Napište do promptu cestu k souboru. |
+| Claude Code poslal soubor jako přílohu (obrázek, přetažení myší) označenou `[Image: ...]` nebo `[Attachment: ...]` bez cesty k souboru | Napište do promptu cestu k souboru. Obyčejný vložený text projde, blokují se jen tyto značky. |
 | Prompt odkazuje na kopii `converted_` a sanitizace je zapnutá | Odkažte na původní dokument, hook ho převede znovu se sanitizací. |
 | Chyba konfigurace, hláška začíná `Document gate config error:` | Opravte místo, které hláška uvádí: neplatný JSON, neznámý klíč, špatná hodnota v `config.json` nebo v proměnné prostředí. |
 

@@ -264,7 +264,7 @@ In these cases the prompt is blocked, nothing goes to the model and Claude Code 
 | The file is larger than 25 MiB | Split the document or export only the part you need. |
 | Conversion produced no text | Usually a scanned PDF without a text layer. Run OCR on it in another tool first. |
 | The prompt refers to an existing document and is longer than 14,000 characters or contains pasted content | Send a shorter prompt and refer to the file by its path. |
-| Claude Code sent the file as an attachment (image, drag and drop) | Write the file path in the prompt instead. |
+| Claude Code sent the file as an attachment (image, drag and drop), marked `[Image: ...]` or `[Attachment: ...]` without a file path | Write the file path in the prompt instead. Plain pasted text passes; only these markers are blocked. |
 | The prompt points to a `converted_` copy while sanitization is on | Refer to the original document. The hook converts it again with sanitization. |
 | Configuration error, the message starts with `Document gate config error:` | Fix the place named in the message: invalid JSON, unknown key, wrong value in `config.json` or in an environment variable. |
 

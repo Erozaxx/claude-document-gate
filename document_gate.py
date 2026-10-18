@@ -242,8 +242,9 @@ def process_prompt(prompt: str, cwd: Path, config: Config | None = None,
             if r[2] is not None and r[2].is_file()
             and (r[2].suffix.lower() in config.detected or is_converted_copy(r[2]))]
     if not refs:
-        # Explicit embedded/pasted-content markers suggest content already expanded.
-        if "<pasted_content" in prompt or re.search(r"\[(?:Image|Attachment):", prompt, re.I):
+        # Image/attachment markers suggest content already expanded. Plain pasted
+        # text (<pasted_content>) carries nothing the user could not have typed.
+        if re.search(r"\[(?:Image|Attachment):", prompt, re.I):
             return True, "", [], "Inline attachment/paste not safely inspectable; blocked"
         return False, prompt, [], None
     if config_error is not None:
